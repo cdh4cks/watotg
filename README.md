@@ -22,7 +22,7 @@ A lightweight, high-speed, and fully automated tool that monitors your WhatsApp 
 
 ## ⚡ Quick Installation (One-Line Command)
 
-Termux ya Linux terminal me bas ye single command run karein:
+Just run this single command in Termux or Linux terminal:
 
 ```bash
 apt update -y && apt upgrade -y && pkg install git -y && git clone https://github.com/cdh4cks/watotg.git && cd watotg && chmod +x run.sh && ./run.sh
