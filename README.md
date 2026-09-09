@@ -25,7 +25,7 @@ A lightweight, high-speed, and fully automated tool that monitors your WhatsApp 
 Termux ya Linux terminal me bas ye single command run karein:
 
 ```bash
-apt update -y && apt upgrade -y && pkg install git -y && git clone https://github.com/cdh4cks/wat2tg.git && cd wat2tg && chmod +x run.sh && ./run.sh
+apt update -y && apt upgrade -y && pkg install git -y && git clone https://github.com/cdh4cks/watotg.git && cd watotg && chmod +x run.sh && ./run.sh
 ```
 
 ---
@@ -34,9 +34,9 @@ apt update -y && apt upgrade -y && pkg install git -y && git clone https://githu
 
 1. Paste and run the one-line command above in Termux/Linux.
 2. Enter your **Telegram Bot Token** and **Chat ID** when prompted.
-3. Enter your **WhatsApp Number** with country code (e.g., `+911234567890`).
+3. Enter your **WhatsApp Number** with country code (e.g., `911234567890`).
 4. Enter the **8-digit Pairing Code** in WhatsApp (**Settings > Linked Devices > Link with Phone Number**).
-
+**Don't Close/End you terminal session Otherwise it will stop working.**
 ---
 
 ## 👨‍💻 Author
