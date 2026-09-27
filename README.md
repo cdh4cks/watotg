@@ -18,6 +18,108 @@ A lightweight, high-speed, and fully automated tool that monitors your WhatsApp 
 * 🔄 **Persistent Session Management:** Credentials auto-save securely inside `auth_info_baileys` so you only log in once.
 * ⚙️ **One-Click Environment Setup:** Automated deployment script featuring built-in `.env` generation—just run `./run.sh` and go.
 
+## 🤖 Telegram Bot Setup
+
+Open **@BotFather** on Telegram.
+
+Send:
+
+/start
+
+Then:
+
+/newbot
+
+Follow the instructions to create your bot.
+
+Example username:
+
+watotg_scheduler_bot
+
+BotFather will provide an **HTTP API Token**. Enter this token as the Telegram Bot Token during setup.
+
+⚠️ Keep your Telegram Bot Token private. Do not share it with anyone.
+
+## 🆔 Telegram Chat ID
+
+Open **@userinfobot** on Telegram and send:
+
+/start
+
+The bot will display your Telegram ID.
+
+Use that ID as the Telegram Chat ID during setup.
+
+## 📅 WhatsApp Message Scheduler
+
+The Telegram bot can be used to schedule WhatsApp messages for a specific date and time.
+
+### /schedule
+
+To create a new scheduled message:
+
+/schedule
+
+The bot will ask for:
+
+1. WhatsApp Number
+2. Date — YYYY-MM-DD
+3. Time — HH:MM
+4. Message
+
+Example:
+
+/schedule
+
+1234567890
+
+2026-10-05
+
+18:30
+
+Hello, tomorrow is our meeting.
+
+The scheduled message will be sent to the specified WhatsApp number at the configured date and time.
+
+### /list
+
+View all scheduled messages:
+
+/list
+
+This displays the schedule ID, recipient, date, time, message, and status.
+
+### /delete ID
+
+Delete an existing schedule:
+
+/delete 3
+
+Here, `3` is the schedule ID.
+
+### /status
+
+Check the current WhatsApp connection and scheduler status:
+
+/status
+
+### /cancel
+
+Cancel the current scheduling process:
+
+/cancel
+
+## 📋 Telegram Commands
+
+/schedule    → Create a new scheduled WhatsApp message
+
+/list        → View scheduled messages
+
+/delete ID   → Delete a scheduled message
+
+/status      → View WhatsApp and scheduler status
+
+/cancel      → Cancel the current scheduling process
 ---
 
 ## ⚡ Quick Installation (One-Line Command)
