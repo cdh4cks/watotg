@@ -38,7 +38,7 @@ let activeSock = null;
 let botStarted = false;
 let whatsappStarting = false;
 let pairingPhoneNumber = '';
-let hasSentStartupMessage = false; // 🔥
+let hasSentStartupMessage = false; // 🔥 Spaming rokne ke liye flag
 
 const scheduleTimers = new Map();
 const scheduleRetryTimers = new Map();
@@ -592,7 +592,7 @@ async function startBot() {
     if (!state.creds.registered) {
         pairingPhoneNumber = pairingPhoneNumber || loadPairingPhone();
         if (!pairingPhoneNumber) {
-            pairingPhoneNumber = normalizeNumber(await question('📱 Enter WhatsApp Phone Number with Country Code Ex:910987654321'));
+            pairingPhoneNumber = normalizeNumber(await question('📱 Enter WhatsApp Phone Number with Country Code: '));
             savePairingPhone(pairingPhoneNumber);
         }
         phoneNumber = pairingPhoneNumber;
