@@ -1,6 +1,5 @@
 /* =========================================================
-   🤖 WHATSAPP TO TELEGRAM
-   Creator / Credit: @Cdh4cks
+   Working WaToTg By @Cdh4cks
 ========================================================= */
 
 require('dotenv').config();
@@ -24,47 +23,36 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 if (!BOT_TOKEN || !CHAT_ID) {
-    console.error(
-        '❌ TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID missing in .env'
-    );
+    console.error('❌ TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID missing in .env');
     process.exit(1);
 }
 
 const bot = new Telegraf(BOT_TOKEN);
-
 const messageStore = new Map();
 
-const SCHEDULE_FILE =
-    path.join(__dirname, 'schedules.json');
-
-const AUTH_DIR =
-    path.join(__dirname, 'auth_info_baileys');
-
-const PAIRING_FILE =
-    path.join(__dirname, '.pairing_phone');
+const SCHEDULE_FILE = path.join(__dirname, 'schedules.json');
+const AUTH_DIR = path.join(__dirname, 'auth_info_baileys');
+const PAIRING_FILE = path.join(__dirname, '.pairing_phone');
 
 let activeSock = null;
 let botStarted = false;
 let whatsappStarting = false;
 let pairingPhoneNumber = '';
+let hasSentStartupMessage = false; // 🔥
 
 const scheduleTimers = new Map();
 const scheduleRetryTimers = new Map();
 
-const rl =
-    readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
 
-const question = (text) =>
-    new Promise((resolve) =>
-        rl.question(text, resolve)
-    );
+const question = (text) => new Promise((resolve) => rl.question(text, resolve));
 
 
 /* =========================================================
-   BASIC HELPERS
+   HELPERS
 ========================================================= */
 
 function cleanText(text) {
@@ -87,88 +75,58 @@ function jidFromNumber(number) {
 
 
 /* =========================================================
-   PAIRING PHONE STORAGE
+   STORAGE
 ========================================================= */
 
 function loadPairingPhone() {
     try {
         if (fs.existsSync(PAIRING_FILE)) {
-            return normalizeNumber(
-                fs.readFileSync(PAIRING_FILE, 'utf8')
-            );
+            return normalizeNumber(fs.readFileSync(PAIRING_FILE, 'utf8'));
         }
-    } catch (err) {
-        console.error('Pairing phone read error:', err.message);
-    }
+    } catch (err) {}
     return '';
 }
 
 function savePairingPhone(number) {
     try {
         fs.writeFileSync(PAIRING_FILE, normalizeNumber(number), 'utf8');
-    } catch (err) {
-        console.error('Pairing phone save error:', err.message);
-    }
+    } catch (err) {}
 }
 
 function clearPairingPhone() {
     pairingPhoneNumber = '';
     try {
-        if (fs.existsSync(PAIRING_FILE)) {
-            fs.unlinkSync(PAIRING_FILE);
-        }
-    } catch (err) {
-        console.error('Pairing phone delete error:', err.message);
-    }
+        if (fs.existsSync(PAIRING_FILE)) fs.unlinkSync(PAIRING_FILE);
+    } catch (err) {}
 }
-
-
-/* =========================================================
-   SCHEDULE STORAGE
-========================================================= */
 
 function loadSchedules() {
     try {
-        if (!fs.existsSync(SCHEDULE_FILE)) {
-            return [];
-        }
-        const data = JSON.parse(
-            fs.readFileSync(SCHEDULE_FILE, 'utf8')
-        );
+        if (!fs.existsSync(SCHEDULE_FILE)) return [];
+        const data = JSON.parse(fs.readFileSync(SCHEDULE_FILE, 'utf8'));
         return Array.isArray(data) ? data : [];
     } catch (err) {
-        console.error('Schedule file read error:', err.message);
         return [];
     }
 }
 
 function saveSchedules(schedules) {
-    fs.writeFileSync(
-        SCHEDULE_FILE,
-        JSON.stringify(schedules, null, 2)
-    );
+    fs.writeFileSync(SCHEDULE_FILE, JSON.stringify(schedules, null, 2));
 }
 
 
 /* =========================================================
-   TELEGRAM DIRECT SENDER
+   TELEGRAM SENDER
 ========================================================= */
 
 async function sendToTelegramDirect(type, data, caption) {
     if (type === 'text') {
-        await bot.telegram.sendMessage(CHAT_ID, data);
+        await bot.telegram.sendMessage(CHAT_ID, data, { parse_mode: 'Markdown' });
         return;
     }
 
-    const ext =
-        type === 'imageMessage' ? 'jpg' :
-        type === 'videoMessage' ? 'mp4' :
-        type === 'audioMessage' ? 'ogg' : 'bin';
-
-    const tempFilePath = path.join(
-        __dirname,
-        `temp_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
-    );
+    const ext = type === 'imageMessage' ? 'jpg' : type === 'videoMessage' ? 'mp4' : type === 'audioMessage' ? 'ogg' : 'bin';
+    const tempFilePath = path.join(__dirname, `temp_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`);
 
     try {
         await fs.promises.writeFile(tempFilePath, data);
@@ -176,6 +134,7 @@ async function sendToTelegramDirect(type, data, caption) {
         form.append('chat_id', CHAT_ID);
         if (caption) {
             form.append('caption', caption);
+            form.append('parse_mode', 'Markdown');
         }
 
         let apiMethod = 'sendDocument';
@@ -194,32 +153,23 @@ async function sendToTelegramDirect(type, data, caption) {
 
         form.append(fieldName, fs.createReadStream(tempFilePath));
 
-        await axios.post(
-            `https://api.telegram.org/bot${BOT_TOKEN}/${apiMethod}`,
-            form,
-            {
-                headers: form.getHeaders(),
-                timeout: 120000,
-                maxContentLength: Infinity,
-                maxBodyLength: Infinity
-            }
-        );
-
-        console.log(`✅ Delivered ${type} to Telegram!`);
+        await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/${apiMethod}`, form, {
+            headers: form.getHeaders(),
+            timeout: 120000,
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity
+        });
     } catch (err) {
-        console.error('❌ Telegram Direct API Error:', err.response?.data?.description || err.message);
     } finally {
         try {
-            if (fs.existsSync(tempFilePath)) {
-                fs.unlinkSync(tempFilePath);
-            }
+            if (fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
         } catch (_) {}
     }
 }
 
 
 /* =========================================================
-   SCHEDULE TIMER
+   SCHEDULE TIMERS
 ========================================================= */
 
 function clearScheduleTimer(id) {
@@ -240,10 +190,7 @@ function scheduleTimer(item) {
     if (item.status !== 'pending') return;
 
     const target = new Date(item.datetime).getTime();
-    if (!Number.isFinite(target)) {
-        console.log(`❌ Invalid schedule date: ${item.id}`);
-        return;
-    }
+    if (!Number.isFinite(target)) return;
 
     const remaining = target - Date.now();
     if (remaining <= 0) {
@@ -280,29 +227,20 @@ function retrySchedule(id, delay = 10000) {
     scheduleRetryTimers.set(id, timer);
 }
 
-
-/* =========================================================
-   SEND SCHEDULED MESSAGE (WITH MEDIA SUPPORT)
-========================================================= */
-
 async function sendScheduledMessage(id) {
     clearScheduleTimer(id);
     const schedules = loadSchedules();
     const item = schedules.find(x => x.id === id);
 
     if (!item || item.status !== 'pending') return;
-
     if (!activeSock) {
-        console.log(`⏳ WhatsApp offline. Schedule ${id} waiting...`);
         retrySchedule(id, 10000);
         return;
     }
 
     try {
         const number = normalizeNumber(item.number);
-        if (!isValidPhoneNumber(number)) {
-            throw new Error('Invalid WhatsApp number');
-        }
+        if (!isValidPhoneNumber(number)) throw new Error('Invalid number');
 
         item.status = 'sending';
         item.lastAttemptAt = new Date().toISOString();
@@ -310,29 +248,16 @@ async function sendScheduledMessage(id) {
 
         const jid = jidFromNumber(number);
 
-        // Check if message has media saved
         if (item.mediaPath && fs.existsSync(item.mediaPath)) {
             const mediaBuffer = fs.readFileSync(item.mediaPath);
             if (item.mediaType === 'image') {
-                await activeSock.sendMessage(jid, {
-                    image: mediaBuffer,
-                    caption: item.message || ''
-                });
+                await activeSock.sendMessage(jid, { image: mediaBuffer, caption: item.message || '' });
             } else if (item.mediaType === 'video') {
-                await activeSock.sendMessage(jid, {
-                    video: mediaBuffer,
-                    caption: item.message || ''
-                });
+                await activeSock.sendMessage(jid, { video: mediaBuffer, caption: item.message || '' });
             } else if (item.mediaType === 'document') {
-                await activeSock.sendMessage(jid, {
-                    document: mediaBuffer,
-                    mimetype: 'application/octet-stream',
-                    fileName: 'scheduled_file',
-                    caption: item.message || ''
-                });
+                await activeSock.sendMessage(jid, { document: mediaBuffer, mimetype: 'application/octet-stream', fileName: 'file', caption: item.message || '' });
             }
         } else {
-            // Text only message
             await activeSock.sendMessage(jid, { text: item.message });
         }
 
@@ -341,42 +266,29 @@ async function sendScheduledMessage(id) {
         delete item.lastError;
         saveSchedules(schedules);
 
-        console.log(`✅ SCHEDULED MESSAGE SENT: ${number} (By   Bot)`);
-
-        try {
-            await bot.telegram.sendMessage(
-                CHAT_ID,
-                [
-                    '✨ **  Bot: Scheduled Message Sent** ✨',
-                    '',
-                    `📱 To: ${item.number}`,
-                    `📅 Date: ${item.date}`,
-                    `⏰ Time: ${item.time}`,
-                    `💬 Message: ${item.message || '(Media Only)'}`,
-                    `🆔 ID: ${item.id}`
-                ].join('\n')
-            );
-        } catch (telegramError) {
-            console.error('Telegram notification error:', telegramError.message);
-        }
+        await bot.telegram.sendMessage(
+            CHAT_ID,
+            [
+                '✨ *Scheduled Message Sent* ✨',
+                '',
+                `📱 To: \`${item.number}\``,
+                `📅 Date: ${item.date}`,
+                `⏰ Time: ${item.time}`,
+                `💬 Message: ${item.message || '(Media Only)'}`
+            ].join('\n'),
+            { parse_mode: 'Markdown' }
+        );
     } catch (error) {
-        console.error(`❌ Scheduled send failed (${id}):`, error.message);
         const currentSchedules = loadSchedules();
         const current = currentSchedules.find(x => x.id === id);
         if (current) {
             current.status = 'pending';
             current.lastError = error.message;
-            current.lastAttemptAt = new Date().toISOString();
             saveSchedules(currentSchedules);
         }
         retrySchedule(id, 10000);
     }
 }
-
-
-/* =========================================================
-   LOAD ALL SCHEDULES
-========================================================= */
 
 function loadAllScheduleTimers() {
     const schedules = loadSchedules();
@@ -391,52 +303,31 @@ function loadAllScheduleTimers() {
             scheduleTimer(item);
         }
     }
-
-    if (changed) {
-        saveSchedules(schedules);
-    }
-
-    console.log(`📅 Loaded ${schedules.filter(x => x.status === 'pending').length} pending schedule(s).`);
+    if (changed) saveSchedules(schedules);
 }
 
 
 /* =========================================================
-   TELEGRAM ACCESS
+   WIZARD & UI
 ========================================================= */
 
 function isAllowedChat(ctx) {
     return String(ctx.chat?.id) === String(CHAT_ID);
 }
 
-
-/* =========================================================
-   SCHEDULE WIZARD (WITH MEDIA SUPPORT)
-========================================================= */
-
 const scheduleSessions = new Map();
 
 function startSchedule(ctx) {
-    scheduleSessions.set(String(ctx.chat.id), {
-        step: 'number',
-        data: {}
-    });
-
-    return ctx.reply(
-        '✨ **  WhatsApp Scheduler** ✨\n\n' +
-        '📱 Enter WhatsApp number with country code:\n' +
-        'Example: `919876543210`',
-        { parse_mode: 'Markdown' }
-    );
+    scheduleSessions.set(String(ctx.chat.id), { step: 'number', data: {} });
+    return ctx.reply('✨ *WhatsApp Scheduler* ✨\n\n📱 Enter WhatsApp number with country code (e.g., `919876543210`):', { parse_mode: 'Markdown' });
 }
 
-function isRealDate(dateString) {
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
-    if (!match) return false;
-    const year = Number(match[1]);
-    const month = Number(match[2]);
-    const day = Number(match[3]);
-    const d = new Date(year, month - 1, day);
-    return d.getFullYear() === year && d.getMonth() === month - 1 && d.getDate() === day;
+function getQuickDates() {
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(today.getDate() + 1);
+    const formatDate = (d) => d.toISOString().split('T')[0];
+    return { todayStr: formatDate(today), tomorrowStr: formatDate(tomorrow) };
 }
 
 async function handleScheduleInput(ctx) {
@@ -449,48 +340,55 @@ async function handleScheduleInput(ctx) {
     const hasDocument = ctx.message?.document;
     const hasVideo = ctx.message?.video;
 
-    /* NUMBER */
     if (session.step === 'number') {
         const number = normalizeNumber(input);
         if (!isValidPhoneNumber(number)) {
-            await ctx.reply('❌ Invalid number.\n\nExample: `919876543210`', { parse_mode: 'Markdown' });
+            await ctx.reply('❌ Invalid number. Example: `919876543210`', { parse_mode: 'Markdown' });
             return true;
         }
         session.data.number = number;
         session.step = 'date';
-        await ctx.reply('📅 Enter date:\nFormat: `YYYY-MM-DD`\nExample: `2026-09-25`', { parse_mode: 'Markdown' });
+        const { todayStr, tomorrowStr } = getQuickDates();
+        await ctx.reply('📅 *Select Date:*', {
+            parse_mode: 'Markdown',
+            ...Markup.inlineKeyboard([
+                [Markup.button.callback(`🟢 Today (${todayStr})`, `date_${todayStr}`)],
+                [Markup.button.callback(`🔵 Tomorrow (${tomorrowStr})`, `date_${tomorrowStr}`)]
+            ])
+        });
         return true;
     }
 
-    /* DATE */
     if (session.step === 'date') {
-        if (!isRealDate(input)) {
-            await ctx.reply('❌ Invalid date format.\nUse: `YYYY-MM-DD`', { parse_mode: 'Markdown' });
+        if (!/^(\d{4})-(\d{2})-(\d{2})$/.test(input)) {
+            await ctx.reply('❌ Use `YYYY-MM-DD` format or click a button.', { parse_mode: 'Markdown' });
             return true;
         }
         session.data.date = input;
         session.step = 'time';
-        await ctx.reply('⏰ Enter time (24-Hour):\nFormat: `HH:MM`\nExample: `22:30`', { parse_mode: 'Markdown' });
+        await ctx.reply('⏰ *Select Time:*', {
+            parse_mode: 'Markdown',
+            ...Markup.inlineKeyboard([
+                [Markup.button.callback('🎂 Birthday 12:00 AM', 'time_00:00')],
+                [Markup.button.callback('09:00 AM', 'time_09:00'), Markup.button.callback('12:00 PM', 'time_12:00')],
+                [Markup.button.callback('03:00 PM', 'time_15:00'), Markup.button.callback('06:00 PM', 'time_18:00')],
+                [Markup.button.callback('09:00 PM', 'time_21:00'), Markup.button.callback('11:59 PM', 'time_23:59')]
+            ])
+        });
         return true;
     }
 
-    /* TIME */
     if (session.step === 'time') {
         if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(input)) {
-            await ctx.reply('❌ Invalid time.\nUse 24-hour format: `HH:MM`', { parse_mode: 'Markdown' });
+            await ctx.reply('❌ Use `HH:MM` format or click a button.', { parse_mode: 'Markdown' });
             return true;
         }
         session.data.time = input;
         session.step = 'message';
-        await ctx.reply(
-            '💬 **Enter message or send media (Photo/Video/Document)!**\n' +
-            'Aap text likh sakte hain ya koi photo/video bhej sakte hain (with optional caption).',
-            { parse_mode: 'Markdown' }
-        );
+        await ctx.reply('💬 *Enter message or send media (Photo/Video/Document):*', { parse_mode: 'Markdown' });
         return true;
     }
 
-    /* MESSAGE / MEDIA */
     if (session.step === 'message') {
         let messageText = input;
         let mediaType = null;
@@ -521,7 +419,7 @@ async function handleScheduleInput(ctx) {
         const target = new Date(datetime).getTime();
 
         if (!Number.isFinite(target) || target <= Date.now()) {
-            await ctx.reply('❌ Ye date/time already past hai. Future date enter karo.');
+            await ctx.reply('❌ Past time cannot be scheduled.');
             scheduleSessions.delete(chatId);
             return true;
         }
@@ -547,214 +445,134 @@ async function handleScheduleInput(ctx) {
 
         await ctx.reply(
             [
-                '✅ **SUCCESSFULLY SCHEDULED** ( )',
+                '✅ *SUCCESSFULLY SCHEDULED*',
                 '',
                 `🆔 ID: \`${item.id}\``,
                 `📱 To: \`${item.number}\``,
-                `📅 Date: ${item.date}`,
-                `⏰ Time: ${item.time}`,
-                `💬 Text: ${item.message || '(Media File Attached)'}`,
-                '',
-                'Status: PENDING ⏳'
+                `📅 Date: ${item.date} | ⏰ Time: ${item.time}`,
+                `💬 Text: ${item.message || '(Media Attached)'}`
             ].join('\n'),
             { parse_mode: 'Markdown' }
         );
-
         return true;
     }
     return true;
 }
 
+bot.action(/^date_(.+)$/, async (ctx) => {
+    if (!isAllowedChat(ctx)) return;
+    await ctx.answerCbQuery();
+    const session = scheduleSessions.get(String(ctx.chat.id));
+    if (!session || session.step !== 'date') return;
+    session.data.date = ctx.match[1];
+    session.step = 'time';
+    await ctx.editMessageText(`📅 Date: *${session.data.date}*\n\n⏰ *Select Time:*`, {
+        parse_mode: 'Markdown',
+        ...Markup.inlineKeyboard([
+            [Markup.button.callback('🎂 Birthday 12:00 AM', 'time_00:00')],
+            [Markup.button.callback('09:00 AM', 'time_09:00'), Markup.button.callback('12:00 PM', 'time_12:00')],
+            [Markup.button.callback('03:00 PM', 'time_15:00'), Markup.button.callback('06:00 PM', 'time_18:00')],
+            [Markup.button.callback('09:00 PM', 'time_21:00'), Markup.button.callback('11:59 PM', 'time_23:59')]
+        ])
+    });
+});
+
+bot.action(/^time_(.+)$/, async (ctx) => {
+    if (!isAllowedChat(ctx)) return;
+    await ctx.answerCbQuery();
+    const session = scheduleSessions.get(String(ctx.chat.id));
+    if (!session || session.step !== 'time') return;
+    session.data.time = ctx.match[1];
+    session.step = 'message';
+    await ctx.editMessageText(`⏰ Time: *${session.data.time}*\n\n💬 *Send message or media now:*`, { parse_mode: 'Markdown' });
+});
+
 
 /* =========================================================
-   TELEGRAM COMMANDS & UI (WITH BUTTONS &  )
+   TELEGRAM COMMANDS
 ========================================================= */
 
 bot.start(async (ctx) => {
     if (!isAllowedChat(ctx)) return;
-    await ctx.reply(
-        '🤖 **Welcome to WhatsApp Automation Bot**\n' +
-        'By: ** ** 🚀\n\n' +
-        'Use the menu below to control your schedules:',
-        Markup.inlineKeyboard([
+    await ctx.reply('🤖 *Working WaToTg By @Cdh4cks* 🚀', {
+        parse_mode: 'Markdown',
+        ...Markup.inlineKeyboard([
             [Markup.button.callback('📅 Schedule Message', 'btn_schedule'), Markup.button.callback('📋 List Schedules', 'btn_list')],
             [Markup.button.callback('📊 Bot Status', 'btn_status'), Markup.button.callback('💾 Backup Data', 'btn_backup')],
-            [Markup.button.callback('❌ Cancel Wizard', 'btn_cancel')]
+            [Markup.button.callback('❌ Cancel', 'btn_cancel')]
         ])
-    );
+    });
 });
 
-bot.action('btn_schedule', async (ctx) => {
-    if (!isAllowedChat(ctx)) return;
-    await ctx.answerCbQuery();
-    await startSchedule(ctx);
-});
-
+bot.action('btn_schedule', async (ctx) => { if (isAllowedChat(ctx)) { await ctx.answerCbQuery(); await startSchedule(ctx); } });
 bot.action('btn_list', async (ctx) => {
     if (!isAllowedChat(ctx)) return;
     await ctx.answerCbQuery();
-    
     const schedules = loadSchedules();
-    if (!schedules.length) {
-        return ctx.reply('📭 No scheduled messages found.');
-    }
-
-    const keyboardButtons = [];
-    const lines = ['✨ **SCHEDULED MESSAGES ( )** ✨\n'];
-
-    for (const item of schedules) {
-        lines.push(`🆔 ID: \`${item.id}\`\n📱 ${item.number} | 📅 ${item.date} ${item.time}\n💬 ${item.message || '(Media)'}\n📌 Status: **${item.status}**\n---`);
-        if (item.status === 'pending') {
-            keyboardButtons.push([Markup.button.callback(`❌ Delete ${item.id}`, `del_${item.id}`)]);
-        }
-    }
-
-    await ctx.reply(lines.join('\n'), {
-        parse_mode: 'Markdown',
-        ...Markup.inlineKeyboard(keyboardButtons)
+    if (!schedules.length) return ctx.reply('📭 No schedules found.');
+    const kb = [];
+    const lines = ['✨ *SCHEDULED MESSAGES* ✨\n'];
+    schedules.forEach(i => {
+        lines.push(`🆔 \`${i.id}\`\n📱 \`${i.number}\` | 📅 ${i.date} ${i.time}\n💬 ${i.message || '(Media)'}\n📌 **${i.status}**\n---`);
+        if (i.status === 'pending') kb.push([Markup.button.callback(`❌ Delete ${i.id}`, `del_${i.id}`)]);
     });
+    await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown', ...Markup.inlineKeyboard(kb) });
 });
 
 bot.action(/^del_(.+)$/, async (ctx) => {
     if (!isAllowedChat(ctx)) return;
     await ctx.answerCbQuery();
     const id = ctx.match[1];
-
+    clearScheduleTimer(id);
     const schedules = loadSchedules();
     const index = schedules.findIndex(x => x.id === id);
-    if (index === -1) {
-        return ctx.reply('❌ Schedule ID not found.');
+    if (index !== -1) {
+        schedules.splice(index, 1);
+        saveSchedules(schedules);
+        await ctx.reply(`✅ Deleted ID: \`${id}\``, { parse_mode: 'Markdown' });
     }
-
-    clearScheduleTimer(id);
-    schedules.splice(index, 1);
-    saveSchedules(schedules);
-
-    await ctx.reply(`✅ Successfully deleted schedule ID: \`${id}\``, { parse_mode: 'Markdown' });
 });
 
 bot.action('btn_status', async (ctx) => {
     if (!isAllowedChat(ctx)) return;
     await ctx.answerCbQuery();
-
-    const schedules = loadSchedules();
-    const pending = schedules.filter(x => x.status === 'pending').length;
-    const sent = schedules.filter(x => x.status === 'sent').length;
-
-    await ctx.reply(
-        [
-            '🤖 **  WISHFLOW STATUS** 🤖',
-            '',
-            `WhatsApp: ${activeSock ? '🟢 Connected' : '🔴 Disconnected'}`,
-            `Pending Schedules: ${pending}`,
-            `Sent Messages: ${sent}`,
-            `Credit:  `
-        ].join('\n'),
-        { parse_mode: 'Markdown' }
-    );
+    const s = loadSchedules();
+    await ctx.reply(`🤖 *Status*\nWhatsApp: ${activeSock ? '🟢 Online' : '🔴 Offline'}\nPending: ${s.filter(x => x.status === 'pending').length}`, { parse_mode: 'Markdown' });
 });
 
 bot.action('btn_backup', async (ctx) => {
     if (!isAllowedChat(ctx)) return;
     await ctx.answerCbQuery();
-
-    if (fs.existsSync(SCHEDULE_FILE)) {
-        await ctx.replyWithDocument({ source: SCHEDULE_FILE }, { caption: '💾 **Schedules Backup File** ( )' });
-    } else {
-        await ctx.reply('📭 No schedule file found to backup.');
-    }
+    if (fs.existsSync(SCHEDULE_FILE)) await ctx.replyWithDocument({ source: SCHEDULE_FILE }, { caption: '💾 *Backup File*' });
+    else await ctx.reply('📭 No data.');
 });
 
 bot.action('btn_cancel', async (ctx) => {
     if (!isAllowedChat(ctx)) return;
     await ctx.answerCbQuery();
     scheduleSessions.delete(String(ctx.chat.id));
-    await ctx.reply('❌ Current wizard cancelled.');
+    await ctx.reply('❌ Cancelled.');
 });
 
+bot.command('schedule', (ctx) => isAllowedChat(ctx) && startSchedule(ctx));
+bot.command('list', (ctx) => isAllowedChat(ctx) && bot.handleUpdate({ ...ctx.update, message: { ...ctx.update.message, text: '' } }));
+bot.command('backup', (ctx) => isAllowedChat(ctx) && fs.existsSync(SCHEDULE_FILE) && ctx.replyWithDocument({ source: SCHEDULE_FILE }));
+bot.command('status', (ctx) => isAllowedChat(ctx) && ctx.reply('🤖 Bot Active'));
 
-/* COMMANDS FOR TEXT */
-
-bot.command('schedule', async (ctx) => {
-    if (!isAllowedChat(ctx)) return;
-    await startSchedule(ctx);
-});
-
-bot.command('list', async (ctx) => {
-    if (!isAllowedChat(ctx)) return;
-    // Triggers same list logic via callback query or message
-    const schedules = loadSchedules();
-    if (!schedules.length) return ctx.reply('📭 No scheduled messages.');
-    
-    let text = '📅 **SCHEDULED MESSAGES ( )**\n\n';
-    schedules.forEach(i => {
-        text += `🆔 \`${i.id}\`\n📱 ${i.number} | 📅 ${i.date} ${i.time}\n💬 ${i.message || '(Media)'}\n📌 ${i.status}\n\n`;
-    });
-    await ctx.reply(text, { parse_mode: 'Markdown' });
-});
-
-bot.command('backup', async (ctx) => {
-    if (!isAllowedChat(ctx)) return;
-    if (fs.existsSync(SCHEDULE_FILE)) {
-        await ctx.replyWithDocument({ source: SCHEDULE_FILE }, { caption: '💾 **Backup File ( )**' });
-    } else {
-        await ctx.reply('📭 No data found.');
-    }
-});
-
-bot.command('status', async (ctx) => {
-    if (!isAllowedChat(ctx)) return;
-    const schedules = loadSchedules();
-    await ctx.reply(`🤖 Bot Online | Pending: ${schedules.filter(x => x.status === 'pending').length} | By  `);
-});
-
-
-/* =========================================================
-   TELEGRAM TEXT HANDLER
-========================================================= */
-
-bot.on('text', async (ctx) => {
-    if (!isAllowedChat(ctx)) return;
-    const text = String(ctx.message?.text || '').trim();
-    if (text.startsWith('/')) return;
-    await handleScheduleInput(ctx);
-});
-
-bot.on('photo', async (ctx) => {
-    if (!isAllowedChat(ctx)) return;
-    await handleScheduleInput(ctx);
-});
-
-bot.on('document', async (ctx) => {
-    if (!isAllowedChat(ctx)) return;
-    await handleScheduleInput(ctx);
-});
-
-
-/* =========================================================
-   START TELEGRAM BOT
-========================================================= */
+bot.on('text', (ctx) => isAllowedChat(ctx) && !ctx.message.text.startsWith('/') && handleScheduleInput(ctx));
+bot.on('photo', (ctx) => isAllowedChat(ctx) && handleScheduleInput(ctx));
+bot.on('document', (ctx) => isAllowedChat(ctx) && handleScheduleInput(ctx));
+bot.on('video', (ctx) => isAllowedChat(ctx) && handleScheduleInput(ctx));
 
 function startTelegramBot() {
     if (botStarted) return;
     botStarted = true;
-
-    bot.launch()
-        .then(() => {
-            console.log('🤖 Telegram bot controls online! (Credit:  )');
-        })
-        .catch((err) => {
-            console.log('Telegram bot error:', err.message);
-            botStarted = false;
-        });
-
-    process.once('SIGINT', () => bot.stop('SIGINT'));
-    process.once('SIGTERM', () => bot.stop('SIGTERM'));
+    bot.launch().catch(() => { botStarted = false; });
 }
 
 
 /* =========================================================
-   WHATSAPP SOCKET & FORWARDERS (UNCHANGED CORE)
+   WHATSAPP BOT & FORWARDER
 ========================================================= */
 
 async function startBot() {
@@ -766,26 +584,15 @@ async function startBot() {
         ({ state, saveCreds } = await useMultiFileAuthState(AUTH_DIR));
     } catch (err) {
         whatsappStarting = false;
-        console.error('❌ Auth state error:', err.message);
         setTimeout(() => void startBot(), 5000);
         return;
     }
 
     let phoneNumber = '';
-    if (state.creds.registered) {
-        clearPairingPhone();
-        console.log('🔐 Saved WhatsApp session found. (By  )');
-    } else {
+    if (!state.creds.registered) {
         pairingPhoneNumber = pairingPhoneNumber || loadPairingPhone();
         if (!pairingPhoneNumber) {
-            pairingPhoneNumber = normalizeNumber(
-                await question('📱 Enter WhatsApp Phone Number with Country Code (e.g. 919876543210): ')
-            );
-            if (!isValidPhoneNumber(pairingPhoneNumber)) {
-                console.log('❌ Invalid phone number.');
-                whatsappStarting = false;
-                return;
-            }
+            pairingPhoneNumber = normalizeNumber(await question('📱 Enter WhatsApp Phone Number with Country Code Ex:910987654321'));
             savePairingPhone(pairingPhoneNumber);
         }
         phoneNumber = pairingPhoneNumber;
@@ -796,9 +603,12 @@ async function startBot() {
         sock = makeWASocket({
             auth: state,
             printQRInTerminal: false,
-            browser: ['Ubuntu', 'Chrome', '122.0.0.0'],
+            browser: ['WaToTg', 'Chrome', '122.0.0.0'],
             syncFullHistory: false,
-            markOnlineOnConnect: true
+            markOnlineOnConnect: true,
+            connectTimeoutMs: 60000,
+            defaultQueryTimeoutMs: 60000,
+            keepAliveIntervalMs: 25000
         });
     } catch (err) {
         whatsappStarting = false;
@@ -812,7 +622,6 @@ async function startBot() {
     sock.ev.on('creds.update', saveCreds);
 
     let codeRequested = false;
-
     sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update;
 
@@ -822,35 +631,45 @@ async function startBot() {
                 try {
                     if (state.creds.registered) return;
                     const code = await sock.requestPairingCode(phoneNumber);
-                    console.log('\n====================================');
-                    console.log(`🔑   PAIRING CODE: ${code}`);
-                    console.log('====================================\n');
-                } catch (err) {
-                    codeRequested = false;
-                }
+                    console.log(`\n🔑 PAIRING CODE: ${code}\n`);
+                } catch (err) { codeRequested = false; }
             }, 6000);
         }
 
         if (connection === 'close') {
-            const statusCode = lastDisconnect?.error?.output?.statusCode;
             if (activeSock === sock) activeSock = null;
-
-            if (statusCode === DisconnectReason.loggedOut) {
+            if (lastDisconnect?.error?.output?.statusCode === DisconnectReason.loggedOut) {
                 clearPairingPhone();
                 return;
             }
-            setTimeout(() => {
-                if (!activeSock && !whatsappStarting) void startBot();
-            }, 3000);
+            setTimeout(() => { if (!activeSock && !whatsappStarting) void startBot(); }, 3000);
         } else if (connection === 'open') {
             activeSock = sock;
             clearPairingPhone();
-            console.log('✅ WhatsApp Online & Active! ( )');
+            console.log('✅ Working WaToTg By @Cdh4cks');
             loadAllScheduleTimers();
+
+            // 🔥 Sirf ek hi baar message jayega jab bot fresh start ya pair hoga
+            if (!hasSentStartupMessage) {
+                hasSentStartupMessage = true;
+                try {
+                    await bot.telegram.sendMessage(
+                        CHAT_ID,
+                        '🤖 *Working WaToTg By @Cdh4cks* 🚀\n\n✅ WhatsApp connected successfully!',
+                        {
+                            parse_mode: 'Markdown',
+                            ...Markup.inlineKeyboard([
+                                [Markup.button.callback('📅 Schedule Message', 'btn_schedule'), Markup.button.callback('📋 List Schedules', 'btn_list')],
+                                [Markup.button.callback('📊 Bot Status', 'btn_status'), Markup.button.callback('💾 Backup Data', 'btn_backup')],
+                                [Markup.button.callback('❌ Cancel', 'btn_cancel')]
+                            ])
+                        }
+                    );
+                } catch (e) {}
+            }
         }
     });
 
-    /* Incoming messages & status forwarder */
     sock.ev.on('messages.upsert', async (m) => {
         if (m.type !== 'notify' && m.type !== 'append') return;
 
@@ -858,33 +677,35 @@ async function startBot() {
             if (!msg.message) continue;
             const remoteJid = msg.key.remoteJid;
             const isStatus = remoteJid === 'status@broadcast';
-
             if (!isStatus && msg.key.fromMe) continue;
 
+            const rawSender = remoteJid.replace('@s.whatsapp.net', '');
+            const senderName = cleanText(msg.pushName || rawSender);
+            const senderInfo = `👤 Name: *${senderName}*\n📱 Number: \`+${rawSender}\``;
+
             const msgId = msg.key.id;
-            let sender = isStatus ? (msg.pushName || msg.key.participant || 'Status') : cleanText(msg.pushName || remoteJid);
             const msgType = Object.keys(msg.message)[0];
 
             try {
                 if (msgType === 'conversation' || msgType === 'extendedTextMessage') {
                     const text = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
                     const formattedText = isStatus
-                        ? `📸 ** : TEXT STATUS**\n👤 From: ${sender}\n💬: ${text}`
-                        : `📩 From: ${sender}\n💬: ${text}`;
+                        ? `📸 *TEXT STATUS*\n${senderInfo}\n💬: ${text}`
+                        : `📩 *New Message*\n${senderInfo}\n💬: ${text}`;
 
                     await sendToTelegramDirect('text', formattedText);
-                    messageStore.set(msgId, { type: 'text', data: text, sender });
+                    messageStore.set(msgId, { type: 'text', data: text, sender: senderName, number: rawSender });
                 } else if (['imageMessage', 'videoMessage', 'documentMessage', 'audioMessage'].includes(msgType)) {
                     const buffer = await downloadMediaMessage(msg, 'buffer', {}, { reuploadRequest: sock.updateMediaMessage });
                     let caption = isStatus
-                        ? `📸 ** : MEDIA STATUS**\n👤 From: ${sender}`
-                        : `📁 Received ${msgType.replace('Message', '')}\n👤 From: ${sender}`;
+                        ? `📸 *MEDIA STATUS*\n${senderInfo}`
+                        : `📁 *Received ${msgType.replace('Message', '')}*\n${senderInfo}`;
 
                     const userCaption = msg.message[msgType]?.caption;
                     if (userCaption) caption += `\n💬 Caption: ${userCaption}`;
 
                     await sendToTelegramDirect(msgType, buffer, caption);
-                    messageStore.set(msgId, { type: msgType, data: buffer, sender });
+                    messageStore.set(msgId, { type: msgType, data: buffer, sender: senderName, number: rawSender });
                 }
 
                 setTimeout(() => messageStore.delete(msgId), 10 * 60 * 1000);
@@ -892,19 +713,19 @@ async function startBot() {
         }
     });
 
-    /* Deleted message catcher */
     sock.ev.on('messages.update', async (updates) => {
         for (const update of updates) {
             if (update.update?.message === null || update.update?.protocolMessage?.type === 0) {
                 const deletedId = update.key.id;
                 if (!messageStore.has(deletedId)) continue;
                 const savedMsg = messageStore.get(deletedId);
+                const senderInfo = `👤 Name: *${savedMsg.sender}*\n📱 Number: \`+${savedMsg.number}\``;
 
                 try {
                     if (savedMsg.type === 'text') {
-                        await sendToTelegramDirect('text', `🚨 ** : DELETED TEXT!**\n👤 From: ${savedMsg.sender}\n💬: ${savedMsg.data}`);
+                        await sendToTelegramDirect('text', `🚨 *DELETED TEXT MESSAGE!*\n${senderInfo}\n💬: ${savedMsg.data}`);
                     } else {
-                        await sendToTelegramDirect(savedMsg.type, savedMsg.data, `🚨 ** : DELETED ${savedMsg.type.toUpperCase()}!**\n👤 From: ${savedMsg.sender}`);
+                        await sendToTelegramDirect(savedMsg.type, savedMsg.data, `🚨 *DELETED ${savedMsg.type.toUpperCase()}!*\n${senderInfo}`);
                     }
                 } catch (err) {}
                 messageStore.delete(deletedId);
@@ -915,11 +736,11 @@ async function startBot() {
 
 
 /* =========================================================
-   ERRORS & START
+   START
 ========================================================= */
 
-process.on('uncaughtException', (err) => {});
-process.on('unhandledRejection', (reason) => {});
+process.on('uncaughtException', () => {});
+process.on('unhandledRejection', () => {});
 
 startTelegramBot();
 loadAllScheduleTimers();
