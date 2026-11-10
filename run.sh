@@ -1,2 +1,109 @@
-#!/bin/bash
-eval "$(echo "IyEvYmluL2Jhc2gKCmNsZWFyCgojIEJhbm5lciAoQ2RoNGNrcykKZWNobyAtZSAiXGVbMTszNm0iCmVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PSIKZWNobyAiICAgIF9fX19fXyAgICBfX19fICBfXyBfXyAgICAgICAgICBfXyAgICAgICAgIgplY2hvICIgICAvIF9fX18vX19fLyAvIC8gLyAvLyAvX19fX19fX18gLyAvX19fX19fXyAiCmVjaG8gIiAgLyAvICAgLyBfXyAgLyAvXy8gLy8gLy9fX18vIF9fLy8gLy9fLyBfX18vICIKZWNobyAiIC8gL19fXy8gL18vIC8gX18gIC8vIC9fXyAgLyAvX18vICw8IChfXyAgKSAgIgplY2hvICIgXF9fX18vXF9fLF8vXy8gL18vL19fX18vICBcX18vXy98Xy9fX19fLyAgICIKZWNobyAiICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiCmVjaG8gLWUgIlxlWzE7MzNtICAgICAgICAgICAgICDwn5SlIENSRUFURUQgQlkgU1VSQUog8J+UpSAgICAgICAgICAgICAiCmVjaG8gLWUgIlxlWzE7MzZtPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XGVbMG0iCmVjaG8gIiIKCmluc3RhbGxfcGFja2FnZSgpIHsKICAgIFBBQ0tBR0U9JDEKICAgIGVjaG8gLWUgIlxlWzE7MzFtWy1dICRQQUNLQUdFIG5vdCBmb3VuZC4gQXR0ZW1wdGluZyB0byBpbnN0YWxsLi4uXGVbMG0iCiAgICBpZiBjb21tYW5kIC12IHBrZyAmPiAvZGV2L251bGw7IHRoZW4KICAgICAgICBwa2cgaW5zdGFsbCAkUEFDS0FHRSAteQogICAgZWxpZiBjb21tYW5kIC12IGFwdC1nZXQgJj4gL2Rldi9udWxsOyB0aGVuCiAgICAgICAgc3VkbyBhcHQtZ2V0IHVwZGF0ZSAmJiBzdWRvIGFwdC1nZXQgaW5zdGFsbCAteSAkUEFDS0FHRQogICAgZWxpZiBjb21tYW5kIC12IGJyZXcgJj4gL2Rldi9udWxsOyB0aGVuCiAgICAgICAgYnJldyBpbnN0YWxsICRQQUNLQUdFCiAgICBmaQp9CgplY2hvIC1lICJcZVsxOzMzbVsrXSBDaGVja2luZyBzeXN0ZW0gcmVxdWlyZW1lbnRzLi4uXGVbMG0iCnNsZWVwIDEKCiMgMS4gTm9kZS5qcyBDaGVjawppZiAhIGNvbW1hbmQgLXYgbm9kZSAmPiAvZGV2L251bGw7IHRoZW4KICAgIGluc3RhbGxfcGFja2FnZSAibm9kZWpzIgplbHNlCiAgICBlY2hvIC1lICJcZVsxOzMybVvinJNdIE5vZGUuanMgaXMgcmVhZHkuXGVbMG0iCmZpCgojIDIuIEdpdCBDaGVjawppZiAhIGNvbW1hbmQgLXYgZ2l0ICY+IC9kZXYvbnVsbDsgdGhlbgogICAgaW5zdGFsbF9wYWNrYWdlICJnaXQiCmVsc2UKICAgIGVjaG8gLWUgIlxlWzE7MzJtW+Kck10gR2l0IGlzIHJlYWR5LlxlWzBtIgpmaQoKIyAzLiBub2RlX21vZHVsZXMgQ2hlY2sKaWYgWyAhIC1kICJub2RlX21vZHVsZXMiIF07IHRoZW4KICAgIGVjaG8gLWUgIlxlWzE7MzNtWytdIEluc3RhbGxpbmcgbnBtIHBhY2thZ2VzLi4uXGVbMG0iCiAgICBucG0gaW5zdGFsbAplbHNlCiAgICBlY2hvIC1lICJcZVsxOzMybVvinJNdIEFsbCBucG0gcGFja2FnZXMgYXJlIHJlYWR5LlxlWzBtIgpmaQoKIyA0LiAuZW52IEZpbGUgR2VuZXJhdG9yIENoZWNrCmlmIFsgISAtZiAiLmVudiIgXTsgdGhlbgogICAgZWNobyAiIgogICAgZWNobyAtZSAiXGVbMTszM21bIV0gLmVudiBmaWxlIG5vdCBmb3VuZC4gTGV0J3Mgc2V0dXAgeW91ciBjcmVkZW50aWFsczpcZVswbSIKICAgIHJlYWQgLXAgIkVudGVyIFRFTEVHUkFNX0JPVF9UT0tFTjogIiBib3RfdG9rZW4KICAgIHJlYWQgLXAgIkVudGVyIFRFTEVHUkFNX0NIQVRfSUQ6ICIgY2hhdF9pZAogICAgcmVhZCAtcCAiRW50ZXIgU0VTU0lPTl9ESVIgKERlZmF1bHQ6IC4vYXV0aF9pbmZvX2JhaWxleXMpOiAiIHNlc3Npb25fZGlyCiAgICAKICAgICMgU2V0IGRlZmF1bHQgc2Vzc2lvbiBkaXJlY3RvcnkgaWYgbGVmdCBlbXB0eQogICAgc2Vzc2lvbl9kaXI9JHtzZXNzaW9uX2RpcjotIi4vYXV0aF9pbmZvX2JhaWxleXMifQoKICAgICMgV3JpdGUgaW5wdXRzIGludG8gLmVudiBmaWxlCiAgICBjYXQgPDxFT1QgPiAuZW52ClRFTEVHUkFNX0JPVF9UT0tFTj0kYm90X3Rva2VuClRFTEVHUkFNX0NIQVRfSUQ9JGNoYXRfaWQKU0VTU0lPTl9ESVI9JHNlc3Npb25fZGlyCkVPVAoKICAgIGVjaG8gLWUgIlxlWzE7MzJtW+Kck10gU2F2ZWQgaW5wdXRzIHRvIC5lbnYgZmlsZSFcZVswbSIKZWxzZQogICAgZWNobyAtZSAiXGVbMTszMm1b4pyTXSAuZW52IGZpbGUgYWxyZWFkeSBleGlzdHMuXGVbMG0iCmZpCgppZiBjb21tYW5kIC12IHRlcm11eC13YWtlLWxvY2sgJj4gL2Rldi9udWxsOyB0aGVuCiAgICB0ZXJtdXgtd2FrZS1sb2NrIDI+L2Rldi9udWxsCmZpCgplY2hvIC1lICJcZVsxOzMybT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PSIKZWNobyAtZSAiICAgICAgIFvinJNdIFNFVFVQIENPTVBMRVRFRCEgU1RBUlRJTkcgQk9ULi4uICAgICAgICAgICIKZWNobyAtZSAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XGVbMG0iCmVjaG8gIiIKCiMgU3RhcnQgYXBwbGljYXRpb24gdXNpbmcgZW52aXJvbm1lbnQgY29uZmlndXJhdGlvbgpub2RlIGluZGV4LmpzCg==" | base64 -d)"
+#!/bin/bash 
+
+### ========================================================
+### BANNER & WELCOME SCREEN
+### ========================================================
+
+if ! command -v figlet &> /dev/null
+then
+echo "[*] First time setup, installing required components..."
+apt update && apt install figlet -y &> /dev/null
+fi 
+
+clear
+echo -e "\e[1;32m"
+figlet -f slant "Cdh4cks"
+echo -e "\e[1;36m========================================"
+echo -e "         CREATED BY SURAJ          "
+echo -e "========================================\e[0m"
+echo "" 
+
+### ========================================================
+### CORE REQUIREMENTS CHECK (NODEJS & NANO)
+### ========================================================
+
+echo "[*] Checking basic requirements..." 
+
+### Checking Node.js
+
+if ! command -v node &> /dev/null
+then
+echo "[-] Node.js not found! Installing..."
+apt update && apt install nodejs -y
+else
+echo "[+] Node.js is already installed."
+fi 
+
+### Checking Nano
+
+if ! command -v nano &> /dev/null
+then
+echo "[-] Nano not found! Installing..."
+apt install nano -y
+else
+echo "[+] Nano is already installed."
+fi 
+
+### ========================================================
+### NPM PACKAGES INSTALLATION (FIXED FOR GIT DEPENDENCY)
+### ========================================================
+
+echo -e "\n[*] Installing packages, this may take a moment..." 
+
+### 🔥 Fix for EALLOWGIT error in newer npm versions
+npm config set allow-git all &> /dev/null
+
+### Step 1: Global PM2 Installation
+
+if ! command -v pm2 &> /dev/null
+then
+echo "[*] Installing PM2 globally..."
+npm install -g pm2 --legacy-peer-deps
+else
+echo "[+] PM2 is already installed."
+fi 
+
+### Step 2: Production packages
+
+echo "[*] Installing local production dependencies..."
+npm install --production --no-audit --no-fund --legacy-peer-deps 
+
+### ========================================================
+### TELEGRAM CONFIGURATION (.env FILE CREATION)
+### ========================================================
+
+if [ ! -f ".env" ]; then
+echo -e "\n\e[1;33m[!] Configuration file (.env) not found. Starting setup...\e[0m" 
+
+### Getting Telegram Bot Token
+
+echo -n "👉 Enter your Telegram Bot Token: "
+read BOT_TOKEN 
+
+### Getting Telegram Chat ID
+
+echo -n "👉 Enter your Telegram Chat ID: "
+read CHAT_ID 
+
+# Creating .env file automatically
+
+echo "TELEGRAM_BOT_TOKEN=$BOT_TOKEN" > .env
+echo "TELEGRAM_CHAT_ID=$CHAT_ID" >> .env
+
+echo -e "\e[1;32m[+] .env file created successfully!\e[0m\n"
+
+else
+echo -e "\n[+] .env file already exists."
+fi 
+
+### ========================================================
+### STARTING THE MAIN TOOL
+### ========================================================
+
+echo -e "\e[1;32m[*] All requirements installed successfully.\e[0m"
+echo "[*] Starting the tool..."
+echo "========================================" 
+
+### Running the main Node.js application
+
+node index.js
